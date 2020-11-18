@@ -8,5 +8,42 @@
     <div class="wrapper">
         <h1>Ext.NET Benchmark</h1>
     </div>
+
+    <p>
+        <ul>
+            <li>
+                See <a href="~/Benchmark/Grid">/Benchmark/Grid</a> benchmark page
+            </li>
+            <li>
+                The page accepts an optional <b>count</b> query string parameter specifying number of grids (<a href="~/Benchmark/Grid?count=3">sample</a>)
+            </li>
+            <li>
+                If an optional <b>test</b> parameter specifies a test name - the results will be saved to a file (<a href="~/Benchmark/Grid?test=benchmark1">sample</a>)
+            </li>
+        </ul>
+    </p>
+
+    <p>
+        Docker Instructions:
+
+        <ul>
+            <li>
+                Build and Publish <b>Ext.Net.Benchmarks.Legacy</b> project to <b>obj\Docker\publish</b> directory
+            </li>
+            <li>
+                CD to: <b>~\benchmarks\Ext.Net.Benchmarks.Legacy</b>
+            </li>
+            <li>
+                Build a Docker image: <b>docker build -t extnet-benchmark-legacy .</b>
+            </li>
+            <li>
+                Run a Docker container: <b>docker run -d -p 5000:80 -v "d:\_results":"c:\app\results" --name ext-bench-legacy extnet-benchmark-legacy</b>
+            </li>
+            <li>
+                Remove the container: <b>docker rm -f ext-bench-legacy</b>
+            </li>
+
+        </ul>
+    </p>
 </body>
 </html>

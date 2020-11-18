@@ -1,4 +1,5 @@
 ﻿using Ext.Net.Benchmarks.Classic.Models;
+using Ext.Net.Benchmarks.Common;
 using Ext.Net.Core;
 
 using Microsoft.AspNetCore.Mvc;
@@ -7,13 +8,17 @@ namespace Ext.Net.Benchmarks.Classic.Controllers
 {
     public class BenchmarkController : Controller
     {
+        private static readonly TestRunner _testRunner = new TestRunner();
+
         public IActionResult Index()
         {
             return this.View();
         }
 
-        public IActionResult Grid(int? count)
+        public IActionResult Grid(int? count = null, string test = null)
         {
+            _testRunner.LogTestRun(test);
+
             var model = new GridBenchmarkModel
             {
                 GridCount = count ?? 1

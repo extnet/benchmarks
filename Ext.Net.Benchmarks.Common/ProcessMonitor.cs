@@ -23,8 +23,11 @@ namespace Ext.Net.Benchmarks.Common
 
         private DateTime _keepAliveTs;
         private DateTime _startTs;
+        private double _startProcMs;
 
         private TextWriter _out;
+
+        public bool IsIdle => _out is null;
 
         public ProcessMonitor(string filePath, int periodMs = 200, int maxIdleMs = 1000)
         {
@@ -48,6 +51,8 @@ namespace Ext.Net.Benchmarks.Common
                 var stream = new FileStream(_filePath, FileMode.Create, FileAccess.Write);
                 _out = new StreamWriter(stream, Encoding.UTF8, 4096, false);
 
+                await LogHeaderAsync();
+
                 _currentCts = new CancellationTokenSource();
                 var ct = _currentCts.Token;
 
@@ -64,6 +69,7 @@ namespace Ext.Net.Benchmarks.Common
 
                 _keepAliveTs = DateTime.MinValue;
                 _startTs = DateTime.UtcNow;
+                _startProcMs = _process.TotalProcessorTime.TotalMilliseconds;
 
                 KeepAlive();
             });
@@ -117,7 +123,7 @@ namespace Ext.Net.Benchmarks.Common
 
             _sb.Append((int)(DateTime.UtcNow - _startTs).TotalMilliseconds);
             _sb.Append(';');
-            _sb.Append((int)_process.TotalProcessorTime.TotalMilliseconds);
+            _sb.Append((int)(_process.TotalProcessorTime.TotalMilliseconds - _startProcMs));
             _sb.Append(';');
             _sb.Append(_process.PrivateMemorySize64);
             _sb.Append(';');
@@ -132,6 +138,38 @@ namespace Ext.Net.Benchmarks.Common
             _sb.Append(GC.CollectionCount(2));
             _sb.Append(';');
             _sb.Append(_maxThreads - avThreads);
+
+            await _out.WriteLineAsync(_sb.ToString());
+        }
+
+        private async Task LogHeaderAsync()
+        {
+            _sb.Clear();
+
+            _sb.AppendLine("OS Version: " + Environment.OSVersion);
+            _sb.AppendLine("CLR Version: " + Environment.Version);
+            _sb.AppendLine("Processor Count: " + Environment.ProcessorCount);
+
+            _sb.AppendLine();
+            _sb.AppendLine();
+
+            _sb.Append("TS (ms)");
+            _sb.Append(';');
+            _sb.Append("CPU time (ms)");
+            _sb.Append(';');
+            _sb.Append("Private Mem (B)");
+            _sb.Append(';');
+            _sb.Append("Working Set (B)");
+            _sb.Append(';');
+            _sb.Append("Allocated Mem (B)");
+            _sb.Append(';');
+            _sb.Append("Gen0 collections");
+            _sb.Append(';');
+            _sb.Append("Gen1 collections");
+            _sb.Append(';');
+            _sb.Append("Gen2 collections");
+            _sb.Append(';');
+            _sb.Append("ThreadPool threads");
 
             await _out.WriteLineAsync(_sb.ToString());
         }
