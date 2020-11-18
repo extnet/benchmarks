@@ -1,0 +1,74 @@
+﻿@model Ext.Net.Benchmarks.Classic5.Models.GridBenchmarkModel
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Ext.NET Grid Benchmark</title>
+
+    <style>
+        .x-grid-row-over .x-grid-cell-inner {
+            font-weight: bold;
+        }
+    </style>
+
+    <script>
+        var template = '<span style="color:{0};">{1}</span>';
+
+        var change = function (value) {
+            return Ext.String.format(template, (value > 0) ? "green" : "red", value);
+        };
+
+        var pctChange = function (value) {
+            return Ext.String.format(template, (value > 0) ? "green" : "red", value + "%");
+        };</script>
+</head>
+<body>
+    @{ var X = Html.X(); }
+
+    @for (int i = 0; i < Model.GridCount; i++)
+    {
+<div>
+
+    @(X.GridPanel()
+            .Id("grid" + i)
+            .Title("Array Grid #" + i)
+            .Width(600)
+            .Height(350)
+            .Store(X
+                .Store()
+                .ModelValue(X
+                    .Model()
+                    .Fields(
+                        new DataField { Name = "company" },
+                        new NumberDataField { Name = "price" },
+                        new NumberDataField { Name = "change" },
+                        new NumberDataField { Name = "pctChange" },
+                        new DateDataField { Name = "lastChange", DateFormat = "M/d hh:mmtt" }
+                    )
+                )
+                .Data(Model.GridData)
+            )
+            .Columns(
+                X.Column().Text("Company").DataIndex("company").Flex(1),
+                X.Column().Text("Price").DataIndex("price").Renderer("Ext.util.Format.usMoney"),
+                X.Column().Text("Change").DataIndex("change").Renderer("change"),
+                X.Column().Text("Change").DataIndex("pctChange").Renderer("pctChange"),
+                X.DateColumn().Text("Last Updated").DataIndex("lastChange")
+            )
+            .Buttons(
+                X.Button()
+                .Id("button" + i)
+                .Text("Click me")
+                .DirectEvents((ButtonDirectEventCollection x) =>
+                {
+                    x.Click.Url = Url.Action("RenderDirectToast");
+                    x.Click.ExtraParams.Add("count", Model.GridCount.ToString(), ParameterMode.Raw);
+                    x.Click.Method = HttpMethod.POST;
+                })
+            )
+    )
+</div>}
+
+</body>
+</html>
