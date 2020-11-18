@@ -118,9 +118,10 @@ namespace Ext.Net.Benchmarks.Common
 
         private async Task LogAsync()
         {
-            ThreadPool.GetAvailableThreads(out var avThreads, out _);
-
             _sb.Clear();
+            _process.Refresh();
+
+            ThreadPool.GetAvailableThreads(out var avThreads, out _);
 
             _sb.Append((int)(DateTime.UtcNow - _startTs).TotalMilliseconds);
             _sb.Append(';');
