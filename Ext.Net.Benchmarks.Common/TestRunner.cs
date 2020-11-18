@@ -8,7 +8,7 @@ namespace Ext.Net.Benchmarks.Common
         private ProcessMonitor _monitor;
         private readonly object _locker = new object();
 
-        public void LogTestRun(string test)
+        public void LogTestRun(string test, int index)
         {
             if (string.IsNullOrEmpty(test))
             {
@@ -28,7 +28,7 @@ namespace Ext.Net.Benchmarks.Common
                             _monitor.Dispose();
                         }
 
-                        var fileName = Path.Combine(@"c:\app\results\" + test + ".csv");
+                        var fileName = Path.Combine(@"c:\app\results\" + test + index + ".csv");
                         var fileInfo = new FileInfo(fileName);
 
                         if (!Directory.Exists(fileInfo.DirectoryName))

@@ -6,6 +6,8 @@ namespace Ext.Net.Benchmarks.Classic5.Models
     {
         public int GridCount { get; set; }
 
+        public string TestName { get; set; }
+
         public object[] GridData => CompaniesDataSet.Data;
     }
 }

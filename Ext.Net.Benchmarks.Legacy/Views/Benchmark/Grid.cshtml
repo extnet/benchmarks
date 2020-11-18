@@ -69,6 +69,7 @@
                 {
                     x.Click.Action = "RenderDirectToast";
                     x.Click.ExtraParams.Add(new Parameter("count", Model.GridCount));
+                    x.Click.ExtraParams.Add(new Parameter("test", Model.TestName));
                     x.Click.Method = HttpMethod.POST;
                 })
             )

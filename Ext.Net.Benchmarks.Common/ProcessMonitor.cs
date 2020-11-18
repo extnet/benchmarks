@@ -103,6 +103,7 @@ namespace Ext.Net.Benchmarks.Common
 
                 await _out.FlushAsync();
                 _out.Dispose();
+                _out = null;
             }
         }
 

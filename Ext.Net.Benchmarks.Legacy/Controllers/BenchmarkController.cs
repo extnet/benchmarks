@@ -17,19 +17,24 @@ namespace Ext.Net.Benchmarks.Legacy.Controllers
 
         public ActionResult Grid(int? count = null, string test = null)
         {
-            _testRunner.LogTestRun(test);
+            var total = count ?? 1;
+
+            _testRunner.LogTestRun(test, total);
 
             var model = new GridBenchmarkModel
             {
-                GridCount = count ?? 1
+                GridCount = total,
+                TestName = test ?? string.Empty
             };
 
             return this.View(model);
         }
 
-        public ActionResult RenderDirectToast(int? count)
+        public ActionResult RenderDirectToast(int? count = null, string test = null)
         {
             var total = count ?? 1;
+
+            _testRunner.LogTestRun(test, total);
 
             for (int i = 0; i < total; i++)
             {
