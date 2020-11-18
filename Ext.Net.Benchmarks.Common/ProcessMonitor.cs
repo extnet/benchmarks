@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Ext.Net.Benchmarks.Common
 {
@@ -14,12 +13,11 @@ namespace Ext.Net.Benchmarks.Common
         private readonly int _periodMs;
         private readonly int _maxIdleMs;
 
-        private readonly SemaphoreSlim _semaphore;
         private readonly StringBuilder _sb;
         private readonly int _maxThreads;
+        private readonly object _locker = new object();
 
-        private CancellationTokenSource _currentCts;
-        private Task _currentTask;
+        private RecurringJob _job;
 
         private DateTime _keepAliveTs;
         private DateTime _startTs;
@@ -29,7 +27,7 @@ namespace Ext.Net.Benchmarks.Common
 
         public bool IsIdle => _out is null;
 
-        public ProcessMonitor(string filePath, int periodMs = 200, int maxIdleMs = 1000)
+        public ProcessMonitor(string filePath, int periodMs = 500, int maxIdleMs = 2000)
         {
             ThreadPool.GetMaxThreads(out _maxThreads, out _);
 
@@ -38,72 +36,54 @@ namespace Ext.Net.Benchmarks.Common
             _maxIdleMs = maxIdleMs;
 
             _process = Process.GetCurrentProcess();
-            _semaphore = new SemaphoreSlim(1, 1);
             _sb = new StringBuilder();
         }
 
-        public async Task StartAsync()
+        public void Start()
         {
-            await Synchronized(async () =>
+            lock (_locker)
             {
-                await StopUnsafeAsync(true);
+                Stop();
 
                 var stream = new FileStream(_filePath, FileMode.Create, FileAccess.Write);
                 _out = new StreamWriter(stream, Encoding.UTF8, 4096, false);
 
-                await LogHeaderAsync();
+                LogHeader();
 
-                _currentCts = new CancellationTokenSource();
-                var ct = _currentCts.Token;
-
-                _currentTask = Task.Run(async () =>
-                {
-                    while (!ct.IsCancellationRequested)
-                    {
-                        await LogAsync();
-                        await Task.Delay(_periodMs);
-                    }
-
-                    await StopAsync(false);
-                });
+                _job = new RecurringJob(
+                    _periodMs,
+                    () => { Log(); },
+                    () => { Stop(); }
+                );
 
                 _keepAliveTs = DateTime.MinValue;
                 _startTs = DateTime.UtcNow;
                 _startProcMs = _process.TotalProcessorTime.TotalMilliseconds;
 
                 KeepAlive();
-            });
+            }
         }
 
-        public async Task StopAsync(bool wait = true)
+        public void Stop()
         {
-            await Synchronized(async () =>
+            if (_job is null)
             {
-                await StopUnsafeAsync(wait);
-            });
-        }
+                return;
+            }
 
-        private async Task StopUnsafeAsync(bool wait)
-        {
-            if (_currentTask != null)
+            lock (_locker)
             {
-                _currentCts.Cancel();
-
-                if (wait)
+                if (_job != null)
                 {
-                    await _currentTask;
+                    _job.Dispose();
+                    _job = null;
+
+                    _keepAliveTs = DateTime.MinValue;
+
+                    _out.Flush();
+                    _out.Dispose();
+                    _out = null;
                 }
-
-                _currentTask = null;
-
-                _currentCts.Dispose();
-                _currentCts = null;
-
-                _keepAliveTs = DateTime.MinValue;
-
-                await _out.FlushAsync();
-                _out.Dispose();
-                _out = null;
             }
         }
 
@@ -112,11 +92,11 @@ namespace Ext.Net.Benchmarks.Common
             if ((DateTime.UtcNow - _keepAliveTs).TotalMilliseconds > _periodMs)
             {
                 _keepAliveTs = DateTime.UtcNow;
-                _currentCts?.CancelAfter(_maxIdleMs);
+                _job?.CancelAfter(_maxIdleMs);
             }
         }
 
-        private async Task LogAsync()
+        private void Log()
         {
             _sb.Clear();
             _process.Refresh();
@@ -140,20 +120,25 @@ namespace Ext.Net.Benchmarks.Common
             _sb.Append(GC.CollectionCount(2));
             _sb.Append(';');
             _sb.Append(_maxThreads - avThreads);
+            _sb.Append('\n');
 
-            await _out.WriteLineAsync(_sb.ToString());
+            _out.Write(_sb.ToString());
         }
 
-        private async Task LogHeaderAsync()
+        private void LogHeader()
         {
             _sb.Clear();
 
-            _sb.AppendLine("OS Version: " + Environment.OSVersion);
-            _sb.AppendLine("CLR Version: " + Environment.Version);
-            _sb.AppendLine("Processor Count: " + Environment.ProcessorCount);
+            _sb.Append("OS Version: " + Environment.OSVersion);
+            _sb.Append('\n');
 
-            _sb.AppendLine();
-            _sb.AppendLine();
+            _sb.Append("CLR Version: " + Environment.Version);
+            _sb.Append('\n');
+
+            _sb.Append("Processor Count: " + Environment.ProcessorCount);
+            _sb.Append('\n');
+
+            _sb.Append('\n', 21);
 
             _sb.Append("TS (ms)");
             _sb.Append(';');
@@ -171,50 +156,66 @@ namespace Ext.Net.Benchmarks.Common
             _sb.Append(';');
             _sb.Append("Gen2 collections");
             _sb.Append(';');
-            _sb.Append("ThreadPool threads");
+            _sb.Append("ThreadPool size");
+            _sb.Append('\n');
 
-            await _out.WriteLineAsync(_sb.ToString());
-        }
-
-        private async Task Synchronized(Func<Task> action)
-        {
-            var isTaken = false;
-
-            try
-            {
-                do
-                {
-                    try
-                    {
-                    }
-                    finally
-                    {
-                        isTaken = await _semaphore.WaitAsync(TimeSpan.FromSeconds(1));
-                    }
-                }
-                while (!isTaken);
-
-                await action();
-            }
-            finally
-            {
-                if (isTaken)
-                {
-                    _semaphore.Release();
-                }
-            }
+            _out.Write(_sb.ToString());
         }
 
         public void Dispose()
         {
-            _currentCts?.Cancel();
-            _semaphore.Dispose();
+            _job?.Dispose();
             _process.Dispose();
 
             if (_out != null)
             {
                 _out.Flush();
                 _out.Dispose();
+            }
+        }
+
+        private class RecurringJob : IDisposable
+        {
+            private readonly CancellationTokenSource _cts;
+            private readonly int _periodMs;
+            private readonly Action _job;
+            private readonly Action _finalizer;
+
+            public RecurringJob(int periodMs, Action job, Action finalizer)
+            {
+                _periodMs = periodMs;
+                _job = job;
+                _finalizer = finalizer;
+                _cts = new CancellationTokenSource();
+
+                var thread = new Thread(TickHandler);
+                thread.Start();
+            }
+
+            public void CancelAfter(int delayMs)
+            {
+                _cts.CancelAfter(delayMs);
+            }
+
+            private void TickHandler()
+            {
+                while (true)
+                {
+                    if (_cts.IsCancellationRequested)
+                    {
+                        _finalizer();
+                        return;
+                    }
+
+                    _job();
+
+                    Thread.Sleep(_periodMs);
+                }
+            }
+
+            public void Dispose()
+            {
+                _cts.Cancel();
             }
         }
     }

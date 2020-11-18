@@ -37,7 +37,7 @@ namespace Ext.Net.Benchmarks.Common
                         }
 
                         _monitor = new ProcessMonitor(fileInfo.FullName);
-                        _ = _monitor.StartAsync();
+                        _monitor.Start();
                     }
                 }
             }
