@@ -8,6 +8,13 @@ WORKDIR /app
 EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
+
+WORKDIR /root/.nuget/NugetFeed
+COPY ./Ext.Net.Benchmarks.Classic/NugetFeed ./
+
+WORKDIR /Users/ContainerUser/AppData/Roaming/NuGet
+COPY ./Ext.Net.Benchmarks.Classic/NugetFeed/NuGet.Config ./NuGet.Config
+
 WORKDIR /src
 COPY ["Ext.Net.Benchmarks.Classic/Ext.Net.Benchmarks.Classic.csproj", "Ext.Net.Benchmarks.Classic/"]
 COPY ["Ext.Net.Benchmarks.Common/Ext.Net.Benchmarks.Common.csproj", "Ext.Net.Benchmarks.Common/"]

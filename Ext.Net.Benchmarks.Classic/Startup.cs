@@ -1,7 +1,10 @@
+using System.Linq;
+
 using Ext.Net.Core;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,6 +25,13 @@ namespace Ext.Net.Benchmarks.Classic
         {
             services.AddControllersWithViews();
             services.AddExtNet();
+
+            if (services
+                .LastOrDefault(x => x.ServiceType == typeof(ApplicationPartManager))
+                ?.ImplementationInstance is ApplicationPartManager appPartManager)
+            {
+                appPartManager.ApplicationParts.Add(new AssemblyPart(GetType().Assembly));
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ext.NET.Classic" Version="7.1.0" />
+    <PackageReference Include="Ext.NET.Classic" Version="7.1.1-20201118-10" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
   </ItemGroup>
 
