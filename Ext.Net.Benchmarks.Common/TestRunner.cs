@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace Ext.Net.Benchmarks.Common
@@ -28,7 +29,12 @@ namespace Ext.Net.Benchmarks.Common
                             _monitor.Dispose();
                         }
 
-                        var fileName = Path.Combine(@"c:\app\results\" + test + "_" + index + ".csv");
+                        var isWin = Environment.OSVersion.Platform == PlatformID.Win32NT;
+                        var rootDir = isWin
+                            ? @"c:\app\results\"
+                            : "/app/results/";
+
+                        var fileName = Path.Combine(rootDir + test + "_" + index + ".csv");
                         var fileInfo = new FileInfo(fileName);
 
                         if (!Directory.Exists(fileInfo.DirectoryName))
