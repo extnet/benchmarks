@@ -28,7 +28,7 @@ namespace Ext.Net.Benchmarks.Common
                             _monitor.Dispose();
                         }
 
-                        var fileName = Path.Combine(@"c:\app\results\" + test + index + ".csv");
+                        var fileName = Path.Combine(@"c:\app\results\" + test + "_" + index + ".csv");
                         var fileInfo = new FileInfo(fileName);
 
                         if (!Directory.Exists(fileInfo.DirectoryName))
