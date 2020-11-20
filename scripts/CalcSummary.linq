@@ -120,14 +120,29 @@ Summary BuildSummary(DirectoryInfo[] testDirs, DirectoryInfo summaryDir)
             "Throughput, MB/s (Direct Event)", true,
             tests, x => x.ThroughputMBPerSec.ToString()),
 
-
         BuildSummarySection(
-            "Avg RAM, MB", false,
+            "Avg GC Allocated, MB", false,
             tests, x => x.Items.Average(i => i.GCAllocatedMb).ToString("F2")),
 
         BuildSummarySection(
-            "Avg RAM, MB (Direct Event)", true,
+            "Avg GC Allocated, MB (Direct Event)", true,
             tests, x => x.Items.Average(i => i.GCAllocatedMb).ToString("F2")),
+
+        BuildSummarySection(
+            "Avg Private Memory, MB", false,
+            tests, x => x.Items.Average(i => i.PrivateMemMb).ToString("F2")),
+
+        BuildSummarySection(
+            "Avg Private Memory, MB (Direct Event)", true,
+            tests, x => x.Items.Average(i => i.PrivateMemMb).ToString("F2")),
+
+        BuildSummarySection(
+            "Avg Working Set, MB", false,
+            tests, x => x.Items.Average(i => i.WorkingSetMb).ToString("F2")),
+
+        BuildSummarySection(
+            "Avg Working Set, MB (Direct Event)", true,
+            tests, x => x.Items.Average(i => i.WorkingSetMb).ToString("F2")),
 
         BuildSummarySection(
             "Avg CPU, %", false,
